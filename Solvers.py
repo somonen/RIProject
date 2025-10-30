@@ -35,13 +35,11 @@ class AbstractSolver:
         return min_distance
 
     def calculate_distance(self, customer: Unit, facility: Unit) -> float:
-        return haversine((customer.coord[0], customer.coord[1]), (facility.coord[0], facility.coord[1]), unit = 'km')
+        return haversine((customer.latitude, customer.longitude), (facility.latitude, facility.longitude), unit = 'km')
 
 class BruteForceObnPMed(AbstractSolver):
 
     def solve(self) -> list[list[Unit], float]:    
-        if self.p < 1 or self.p > len(self.facilities):
-            raise ValueError("p is not a valid number")
         
         best_combination = []
         best_total_distance = float('-inf')
@@ -51,10 +49,15 @@ class BruteForceObnPMed(AbstractSolver):
             if current_total_distance > best_total_distance:
                 best_total_distance = current_total_distance
                 best_combination = combination
-                print(f"Found better solution with total distance: {best_total_distance}")
     
             
         return best_combination, best_total_distance
+
+    def __str__(self) -> str:
+        return "Brute force"
+
+    def __repr__(self) -> str:
+        return "Brute force"
 
 
 class VNSObnPMed(AbstractSolver):
@@ -74,7 +77,6 @@ class VNSObnPMed(AbstractSolver):
                 if current_total_distance > best_total_distance:
                     best_total_distance = current_total_distance
                     best_solution = current_facilities
-                    print(f"Found better solution with total distance: {best_total_distance}")
         
         
         return best_solution, best_total_distance
@@ -94,6 +96,12 @@ class VNSObnPMed(AbstractSolver):
             j += 1
             
         return current_facilities
+
+    def __str__(self) -> str:
+        return "VNS"
+
+    def __repr__(self) -> str:
+        return "VNS"
 
 class SAObnPMed(AbstractSolver):
     def __init__(self, customers: list[Unit], facilities: list[Unit], p: int, temp: float = 1, iters: int = 100) -> 'SAObnPMed':
@@ -117,7 +125,6 @@ class SAObnPMed(AbstractSolver):
                 best_total_distance = current_total_distance
                 best_local_solution = current_solution
                 best_local_total_distance = current_total_distance
-                print(f"Found better solution with total distance: {best_total_distance}")
             elif random.random() < self.calculate_temperature(i):
                 best_local_solution = current_solution
                 best_local_total_distance = current_total_distance
@@ -138,12 +145,18 @@ class SAObnPMed(AbstractSolver):
     
         return current_facilities
 
+    def __str__(self) -> str:
+        return "Simulated annealing"
+
+    def __repr__(self) -> str:
+        return "Simulated annealing"
+
 class TSObnPMed(AbstractSolver):
     def __init__(self, customers: list[Unit], facilities: list[Unit], p: int, iters: int = 100, taboo_memory: int = 0) -> 'TSObnPMed':
         super().__init__(customers, facilities, p)
         self.iters = iters
         self.taboo_list = []
-        self.taboo_memory = len(self.facilities)/2
+        self.taboo_memory = round(len(self.facilities)/2)
 
     def solve(self) -> list[list[Unit], float]:
 
@@ -162,7 +175,6 @@ class TSObnPMed(AbstractSolver):
                 best_total_distance = current_total_distance
                 best_local_solution = current_solution
                 best_local_total_distance = current_total_distance
-                print(f"Found better solution with total distance: {best_total_distance}")
 
             if len(self.taboo_list) > self.taboo_memory:
                 self.taboo_list = self.taboo_list[1:]
@@ -179,6 +191,12 @@ class TSObnPMed(AbstractSolver):
         current_facilities[replace_idx] = new_facility
     
         return current_facilities
+
+    def __str__(self) -> str:
+        return "Taboo search"
+
+    def __repr__(self) -> str:
+        return "Taboo search"
 
 class APFObnPMed(AbstractSolver):
     def __init__(self, customers: list[Unit], p: int, bounds: tuple, iters: int = 100) -> 'APFObnPMed':
@@ -211,13 +229,16 @@ class APFObnPMed(AbstractSolver):
                     if random.random() < 1.0/len(facilities):
                         facility.teleport(self.bounds)            
                     
-            if iteration % 30 == 0:
-                print(f"{iteration}, {self.iters}: Current best solution: {best_total_distance}")
-
         for facility in facilities:
             facility.return_to_best_coord()
         
         return facilities, best_total_distance
+
+    def __str__(self) -> str:
+        return "Arbitrarily positioned"
+
+    def __repr__(self) -> str:
+        return "Arbitrarily positioned"
 
 
 class APFObnPMedWithConstraint(APFObnPMed):
@@ -259,4 +280,10 @@ class APFObnPMedWithConstraint(APFObnPMed):
                 nearest_customer = (customer, current_distance)
         
         return nearest_customer
+
+    def __str__(self) -> str:
+        return "Arbitrarily positioned"
+
+    def __repr__(self) -> str:
+        return "Arbitrarily positioned"
 
